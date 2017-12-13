@@ -1,0 +1,18 @@
+For the given design, I have applied simple multi-threading approach for the transfer amount operation which should be completed all at once or none. As each request is handled independently by rest controller, I have used Semaphore instance at class level to ensure only one request executes transfer at a time. This can be further improved by implementing micro-service architecture with thread-pool.
+The design can be further improved considering the below factors:
+1.	Security to be implemented
+2.	Transaction management system 
+3.	The throughput expected by the system
+4.	Scalability expected from the system
+5.	Database or data-store to be used and JPA.
+
+If given more time, I would like to implement
+1.	Transaction authentication mechanism
+2.	Security such that no url is tempered with to enter the system
+3.	Remove the query string from URL and have a better way of sending request params.
+4.	PMD, checkstyle and findBug code analyzers
+5.	Code coverage reporting tools like Jacoco
+6.	API documentation like Swagger
+7.	Continuous Integration tool and deployment
+
+
