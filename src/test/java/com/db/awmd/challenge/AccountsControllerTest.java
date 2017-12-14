@@ -2,8 +2,6 @@ package com.db.awmd.challenge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -15,10 +13,8 @@ import java.math.BigDecimal;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -39,7 +35,7 @@ public class AccountsControllerTest {
 	@Autowired
 	private AccountsService accountsService;
 
-	@MockBean
+	@Autowired
 	private EmailNotificationService notificationService;
 
 	@Autowired
@@ -127,9 +123,7 @@ public class AccountsControllerTest {
 		Account toAccount = new Account(accountToId, new BigDecimal(250));
 		accountsService.createAccount(toAccount);
 
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
-
-		this.mockMvc.perform(post("/v1/accounts/transfer/A001/A002/300")).andExpect(status().isOk());
+		mockMvc.perform(post("/v1/accounts/transfer/A001/A002/300")).andExpect(status().isOk());
 		assertThat(fromAccount.getBalance()).isEqualByComparingTo("700");
 		assertThat(toAccount.getBalance()).isEqualByComparingTo("550");
 
@@ -145,9 +139,8 @@ public class AccountsControllerTest {
 		Account toAccount = new Account(accountToId, new BigDecimal(250));
 		accountsService.createAccount(toAccount);
 
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
-
-		this.mockMvc.perform(post("/v1/accounts/transfer/A001/A002/1300")).andExpect(status().isBadRequest());
+		mockMvc.perform(post("/v1/accounts/transfer/A001/A002/1300")).andExpect(status().isBadRequest());
+		
 		assertThat(fromAccount.getBalance()).isEqualByComparingTo("1000");
 		assertThat(toAccount.getBalance()).isEqualByComparingTo("250");
 
@@ -163,9 +156,7 @@ public class AccountsControllerTest {
 		Account toAccount = new Account(accountToId, new BigDecimal(250));
 		accountsService.createAccount(toAccount);
 
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
-
-		this.mockMvc.perform(post("/v1/accounts/transfer/A001/A002/-300")).andExpect(status().isBadRequest());
+		mockMvc.perform(post("/v1/accounts/transfer/A001/A002/-300")).andExpect(status().isBadRequest());
 		assertThat(fromAccount.getBalance()).isEqualByComparingTo("1000");
 		assertThat(toAccount.getBalance()).isEqualByComparingTo("250");
 
@@ -181,8 +172,6 @@ public class AccountsControllerTest {
 		String accountToId = "A002";
 		Account toAccount = new Account(accountToId, new BigDecimal(250));
 		accountsService.createAccount(toAccount);
-
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
 
 		this.mockMvc.perform(post("/v1/accounts/transfer/A00111/A002/300")).andExpect(status().isBadRequest());
 		assertThat(fromAccount.getBalance()).isEqualByComparingTo("1000");
@@ -201,8 +190,6 @@ public class AccountsControllerTest {
 		Account toAccount = new Account(accountToId, new BigDecimal(250));
 		accountsService.createAccount(toAccount);
 
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
-
 		this.mockMvc.perform(post("/v1/accounts/transfer/A001/A00222/300")).andExpect(status().isBadRequest());
 		assertThat(fromAccount.getBalance()).isEqualByComparingTo("1000");
 		assertThat(toAccount.getBalance()).isEqualByComparingTo("250");
@@ -213,18 +200,16 @@ public class AccountsControllerTest {
 	public void transferAmountMultipleRequests() throws Exception {
 		
 		String accountFromId = "A001";
-		Account fromAccount = new Account(accountFromId, new BigDecimal(1000));
+		Account fromAccount = new Account(accountFromId, new BigDecimal(1000000));
 		accountsService.createAccount(fromAccount);
 
 		String accountToId = "A002";
-		Account toAccount = new Account(accountToId, new BigDecimal(550));
+		Account toAccount = new Account(accountToId, new BigDecimal(150000));
 		accountsService.createAccount(toAccount);
-
-		Mockito.doNothing().when(notificationService).notifyAboutTransfer(anyObject(), anyString());
 
 		Runnable r1 = () -> {
 			try {
-				mockMvc.perform(post("/v1/accounts/transfer/A001/A002/400")).andExpect(status().isOk());
+				mockMvc.perform(post("/v1/accounts/transfer/A001/A002/100")).andExpect(status().isOk());
 				
 				
 			} catch (Exception e) {
@@ -234,7 +219,7 @@ public class AccountsControllerTest {
 
 		Runnable r2 = () -> {
 			try {
-				mockMvc.perform(post("/v1/accounts/transfer/A001/A002/300")).andExpect(status().isOk());
+				mockMvc.perform(post("/v1/accounts/transfer/A001/A002/200")).andExpect(status().isOk());
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -243,7 +228,7 @@ public class AccountsControllerTest {
 
 		Runnable r3 = () -> {
 			try {
-				mockMvc.perform(post("/v1/accounts/transfer/A002/A001/300")).andExpect(status().isOk());
+				mockMvc.perform(post("/v1/accounts/transfer/A002/A001/100")).andExpect(status().isOk());
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -254,10 +239,21 @@ public class AccountsControllerTest {
 		new Thread(r2).start();
 		new Thread(r3).start();
 
+		for (int i = 0; i < 10000; i++) {
+			if(i%2 == 0){
+				new Thread(r1).start();
+			}else{
+				new Thread(r3).start();
+			}
+		}
 		
+		//Wait until all threads finish processing
 		Thread.sleep(15000);
-		 assertThat(fromAccount.getBalance()).isEqualByComparingTo("600");
-		 assertThat(toAccount.getBalance()).isEqualByComparingTo("950");
+		/*Only 2nd transaction will get reflected to the balance as for the other transactions 
+		 * the one will transfer from source to destination and the second will transfer the same
+		 * amount from destination to source undoing the earlier transfer.*/
+		 assertThat(fromAccount.getBalance()).isEqualByComparingTo("999800");
+		 assertThat(toAccount.getBalance()).isEqualByComparingTo("150200");
 
 	}
 }
